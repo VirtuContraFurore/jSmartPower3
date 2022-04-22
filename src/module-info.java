@@ -1,0 +1,2 @@
+module jSmartPower3 {
+}
