@@ -22,6 +22,8 @@ public class TestGraphics {
 		JFrame f = new JFrame("Multiple grid bag layout tests");
 		Container pane = f.getContentPane();
 		pane.setLayout(new GridBagLayout());
+		
+		// Note: extra size gets subdivided using the weights
 
 		// Constraints
 		GridBagConstraints c = new GridBagConstraints();
