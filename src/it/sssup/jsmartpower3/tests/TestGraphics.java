@@ -1,4 +1,4 @@
-package it.sssup.jsmartpower3;
+package it.sssup.jsmartpower3.tests;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

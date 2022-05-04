@@ -1,8 +1,7 @@
-package it.sssup.jsmartpower3;
+package it.sssup.jsmartpower3.tests;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
