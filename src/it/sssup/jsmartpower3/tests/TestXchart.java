@@ -14,17 +14,39 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
 
+import org.knowm.xchart.XChartPanel;
+import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
+import org.knowm.xchart.XYSeries.XYSeriesRenderStyle;
+import org.knowm.xchart.style.Styler;
+import org.knowm.xchart.style.Styler.LegendPosition;
+
 public class TestXchart {
 
 	public static void main(String[] args) {
 		System.out.println("Hello world");
 		
+		// Create Chart
+		final XYChart chart = new XYChartBuilder().width(600).height(400).title("Area Chart").xAxisTitle("X").yAxisTitle("Y").build();
+
+		// Customize Chart
+		chart.getStyler().setLegendPosition(LegendPosition.InsideNE);
+		chart.getStyler().setDefaultSeriesRenderStyle(XYSeriesRenderStyle.Area);
+
+		// Series
+		chart.addSeries("a", new double[] { 0, 3, 5, 7, 9 }, new double[] { -3, 5, 9, 6, 5 });
+		chart.addSeries("b", new double[] { 0, 2, 4, 6, 9 }, new double[] { -1, 6, 4, 0, 4 });
+		chart.addSeries("c", new double[] { 0, 1, 3, 8, 9 }, new double[] { -2, -1, 1, 0, 1 });
+		
+		chart.getStyler().setZoomEnabled(true);
+		chart.getStyler().setZoomResetByDoubleClick(false);
+		chart.getStyler().setZoomResetByButton(true);
+		chart.getStyler().setZoomSelectionColor(new Color(0,0 , 192, 128));
+		
 		JFrame f = new JFrame("Multiple grid bag layout tests");
 		Container pane = f.getContentPane();
 		pane.setLayout(new GridBagLayout());
 		
-		// Note: extra size gets subdivided using the weights
-
 		// Constraints
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH; 
@@ -38,6 +60,10 @@ public class TestXchart {
 		c.weightx = 0.8;
 		c.weighty = 0.75;
 	   	pane.add(MyPanel1, c);
+	   	
+	    JPanel chartPanel = new XChartPanel<XYChart>(chart);
+	    MyPanel1.add(chartPanel);
+
 
 	   	// Large panel 4/5 and 3/4
 	   	JPanel MyPanel2 = createPanel("LOGGING DATA");
