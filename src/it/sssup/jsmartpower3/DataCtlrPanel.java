@@ -1,8 +1,6 @@
 package it.sssup.jsmartpower3;
 
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -16,7 +14,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
 import javax.swing.filechooser.FileFilter;
 
 @SuppressWarnings("serial")
@@ -24,7 +21,6 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 	
 	private String logfile_path; /* Stored here to display later in the helper label */
 	private DataCtrlListener listener;
-	
 	
 	/* Graphical elements */
 	private JLabel outdirLabel;
