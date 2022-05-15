@@ -103,6 +103,7 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 		c.gridx = 0;
 		c.gridy++;
 		c.gridwidth = 3;
+		c.weighty = 0.30;
 		c.insets = new Insets(2, 15, 0, 0);
 		this.helper = new JLabel();
 		this.add(helper, c);

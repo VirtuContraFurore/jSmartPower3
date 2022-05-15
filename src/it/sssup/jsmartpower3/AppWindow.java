@@ -47,30 +47,31 @@ public class AppWindow extends JFrame {
 	
 		this.channels = new ChannelPlotPanel(channel_count);
 		AppWindow.gridBagAdd(pane, channels,
-				0, 0, 1, 1, 0.80, 0.90);
+				0, 0, 1, 1, 0.90, 0.90);
 		
 		this.data = new DataCtlrPanel();
 		AppWindow.gridBagAdd(pane, data,
-				0, 1, 1, 1, 0.80, 0.10);
+				0, 1, 1, 1, 0.90, 0.10);
 		
 		JPanel side_panel = new JPanel();
 		side_panel.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Color.BLACK));
 		side_panel.setLayout(new GridBagLayout());
 		AppWindow.gridBagAdd(pane, side_panel, 
-				1, 0, 1, 2, 0.20, 1.00);
+				1, 0, 1, 2, 0.10, 1.00);
 
 		this.serial = new SerialCtrlPanel();
 		AppWindow.gridBagAdd(side_panel, serial,
-				0, 0, 1, 1, 1.00, 0.33);
+				0, 0, 1, 1, 1.00, 0.15);
 		
 		this.wifi = new WifiCtrl();
 		AppWindow.gridBagAdd(side_panel, wifi,
-				0, 1, 1, 1, 1.00, 0.33);
+				0, 1, 1, 1, 1.00, 0.25);
 		
 		this.log = new LogCtrlPanel();
 		AppWindow.gridBagAdd(side_panel, log,
-				0, 2, 1, 1, 1.00, 0.33);
+				0, 2, 1, 1, 1.00, 0.45);
 		
+		this.setWindowPostfix("");
 	   	this.setVisible(true);
 	}
 	

@@ -32,7 +32,7 @@ public class SerialCtrlPanel extends JPanel implements ActionListener {
 		
 		this.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
-		c.weightx = c.weighty = 1.0f;
+		c.weightx = c.weighty = 1.00;
 		
 		/* First line */
 		c.gridx = c.gridy = 0;
@@ -88,7 +88,7 @@ public class SerialCtrlPanel extends JPanel implements ActionListener {
 		this.add(close, c);
 		
 		c.gridx++;
-		this.refresh = new JButton("Refresh");
+		this.refresh = new JButton("<html>Refresh<br>port list</html>");
 		this.add(refresh, c);
 		
 		// Prevents editing values of String JComboBox
@@ -113,7 +113,7 @@ public class SerialCtrlPanel extends JPanel implements ActionListener {
 	 * @param connected
 	 */
 	public void setConnected(boolean connected) {
-		status.setText("Serial port " + ((connected) ? "CONNECTED" : "NOT CONNECTED"));
+		status.setText("SERIAL PORT " + ((connected) ? "CONNECTED" : "NOT CONNECTED"));
 		ports.setEditable(!connected);
 		open.setEnabled(!connected);
 		close.setEnabled(connected);
