@@ -7,6 +7,7 @@ public class Main {
 	public static void main(String[] args) {
 		
 		DataLogger logger = new DataLogger();
+
 		AppWindow.getIstance().populate(SMARTPOWER3_CHANNELS);
 		
 		AppWindow.getIstance().getSerial().setSerialCtrlListener(logger.getSerialService());

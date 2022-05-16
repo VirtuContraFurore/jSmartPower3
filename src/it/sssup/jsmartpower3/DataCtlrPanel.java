@@ -59,7 +59,7 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx++;
 		this.outdirField = new JTextField(20);
-		this.outdirField.setText("~/");
+		this.outdirField.setText(System.getProperty("user.home"));
 		this.add(outdirField, c);
 
 		c.fill = GridBagConstraints.NONE;
@@ -213,9 +213,11 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 				this.setHelperString(HelperStrings.FILE_CROPPED_FAIL);
 			
 		} else if (s == this.captureStart) {
-			if(this.listener.startLogging())
+			String file = this.listener.startLogging();
+			if( file!= null) {
+				this.logfile_path = file;
 				this.setHelperString(HelperStrings.LOG_START);
-			else
+			}else
 				this.setHelperString(HelperStrings.LOG_START_FAIL);
 			
 		} else if (s == this.captureStop) {
@@ -279,9 +281,9 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 		
 		/**
 		 * Start logging to currently opened file
-		 * @return true on success
+		 * @return full path of logging file, null if creation failed
 		 */
-		public boolean startLogging();
+		public String startLogging();
 		
 		/**
 		 * Stop logging to currently opened file

@@ -184,6 +184,15 @@ public class WifiService implements WifiCtrlListener{
 
 	@Override
 	public boolean changeUdpPort(int port) {
+		/* if serial not connect, try only to listen to user requested port */
+		if(!this.serial.isSerialConnected()) {
+			this.udp_port = port;
+			if(this.packet_monitor != null)
+				this.packet_monitor.changePort(port);
+			return true;
+		}
+		
+		/* if serial is connected first change device setting */
 		if(this.udp_settings_dummy)
 			this.refreshWifiStatus();
 		

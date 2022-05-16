@@ -21,6 +21,9 @@ public class LogCtrlPanel extends JPanel implements ActionListener{
 	
 	private LogCtrlListener listener;
 	
+	private final static int MAXLINES = 70;
+	private int lines;
+	
 	/* Graphical elements */
 	private JLabel source_lbl;
 	private JLabel data_rate;
@@ -33,6 +36,7 @@ public class LogCtrlPanel extends JPanel implements ActionListener{
 	
 	public LogCtrlPanel() {
 		this.listener = null;
+		this.lines = 0;
 		
 		this.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -131,7 +135,13 @@ public class LogCtrlPanel extends JPanel implements ActionListener{
 		int hval = this.log_scroll.getHorizontalScrollBar().getValue();
 		int hmax = this.log_scroll.getHorizontalScrollBar().getMaximum();
 		int dmax = this.log_data.getColumns();
+		
 		String text = this.log_data.getText() + "\n" + line;
+		if(++this.lines >= LogCtrlPanel.MAXLINES) {
+			this.lines--;
+			text = text.substring(text.indexOf('\n')+1);
+		}
+		
 		this.log_data.setText(text);
 		int d1 = this.log_data.getCaret().getDot() - line.length();
 		this.log_data.getCaret().setDot(d1 + hval*dmax/hmax);
@@ -143,6 +153,7 @@ public class LogCtrlPanel extends JPanel implements ActionListener{
 	public void clearLog() {
 		this.log_data.setText("");
 		this.setIncomingDataRate(-1);
+		this.lines = 0;
 	}
 	
 	/**
