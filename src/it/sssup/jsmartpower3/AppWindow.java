@@ -22,7 +22,7 @@ public class AppWindow extends JFrame {
 	private ChannelPlotPanel channels;
 	private DataCtlrPanel data;
 	private SerialCtrlPanel serial;
-	private WifiCtrl wifi;
+	private WifiCtrlPanel wifi;
 	private LogCtrlPanel log;
 	
 	private AppWindow() {
@@ -63,7 +63,7 @@ public class AppWindow extends JFrame {
 		AppWindow.gridBagAdd(side_panel, serial,
 				0, 0, 1, 1, 1.00, 0.15);
 		
-		this.wifi = new WifiCtrl();
+		this.wifi = new WifiCtrlPanel();
 		AppWindow.gridBagAdd(side_panel, wifi,
 				0, 1, 1, 1, 1.00, 0.25);
 		
@@ -95,7 +95,7 @@ public class AppWindow extends JFrame {
 		return serial;
 	}
 
-	public WifiCtrl getWifi() {
+	public WifiCtrlPanel getWifi() {
 		return wifi;
 	}
 

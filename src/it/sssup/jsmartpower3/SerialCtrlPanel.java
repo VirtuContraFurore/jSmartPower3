@@ -123,11 +123,13 @@ public class SerialCtrlPanel extends JPanel implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Object s = e.getSource();
-		
-		System.out.println(e.getActionCommand()+":"+e.getClass());
-		
+				
 		if(s == this.open) {
-			boolean connected = this.listener.serialConnect((String)this.ports.getSelectedItem(), (Integer)this.bauds.getSelectedItem());
+			String port = (String)this.ports.getSelectedItem();
+			Integer baud = (Integer)this.bauds.getSelectedItem();
+			if(port == null || baud == null)
+				return;
+			boolean connected = this.listener.serialConnect(port, baud);
 			this.setConnected(connected);
 		} else if(s == this.close) {
 			this.listener.serialDisconnect();
@@ -135,7 +137,9 @@ public class SerialCtrlPanel extends JPanel implements ActionListener {
 		} else if(s == this.refresh) {
 			forceRefresh();
 		} else if(s == this.bauds) {
-			this.listener.serialChangeBaud((Integer)this.bauds.getSelectedItem());
+			Integer baud = (Integer)this.bauds.getSelectedItem();
+			if(baud != null)
+				this.listener.serialChangeBaud(baud);
 		}
 		
 	}
@@ -164,6 +168,9 @@ public class SerialCtrlPanel extends JPanel implements ActionListener {
 			if(p != null && p.equals(s))
 				this.ports.setSelectedItem(s);
 		}
+		
+		if(b == null)
+			this.bauds.setSelectedIndex(this.bauds.getItemCount()-1);
 		
 		this.bauds.addActionListener(this);
 	}
@@ -210,8 +217,9 @@ public class SerialCtrlPanel extends JPanel implements ActionListener {
 		
 		/**
 		 * Change baud rate
+		 * @return true on success
 		 */
-		public void serialChangeBaud(int baud);
+		public boolean serialChangeBaud(int baud);
 		
 		/**
 		 * @return an array of serial port names

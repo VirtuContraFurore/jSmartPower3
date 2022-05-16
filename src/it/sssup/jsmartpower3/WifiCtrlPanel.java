@@ -14,7 +14,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 @SuppressWarnings("serial")
-public class WifiCtrl extends JPanel implements ActionListener {
+public class WifiCtrlPanel extends JPanel implements ActionListener {
 	
 	private WifiCtrlListener listener;
 	
@@ -23,12 +23,13 @@ public class WifiCtrl extends JPanel implements ActionListener {
 	private JLabel ssid_lbl;
 	private JLabel udp_port_lbl;
 	private JLabel udp_rec_address_lbl;
+	private JLabel info;
 	private JButton ssid;
 	private JButton udp_port;
 	private JButton udp_rec_address;
 	private JButton refresh_status;
 
-	public WifiCtrl() {
+	public WifiCtrlPanel() {
 		this.listener = null;
 		
 		this.setLayout(new GridBagLayout());
@@ -99,6 +100,17 @@ public class WifiCtrl extends JPanel implements ActionListener {
 		c.gridx = 0;
 		c.gridy++;
 		c.gridwidth = 2;
+		c.weighty = 0.1;
+		c.fill = GridBagConstraints.NONE;
+		c.anchor = GridBagConstraints.CENTER;
+		this.info = new JLabel("no info");
+		this.add(info, c);
+		
+		/* Sixth line */
+		c.gridx = 0;
+		c.gridy++;
+		c.weighty = 1.00;
+		c.gridwidth = 2;
 		c.fill = GridBagConstraints.BOTH;
 		c.anchor = GridBagConstraints.CENTER;
 		this.refresh_status = new JButton("Refresh device wifi status");
@@ -120,7 +132,9 @@ public class WifiCtrl extends JPanel implements ActionListener {
 	 * @param connected
 	 */
 	public void setConnected(boolean connected) {
-		status.setText("WIFI " + ((connected) ? "CONNECTED" : "NOT CONNECTED"));
+		this.status.setText("WIFI " + ((connected) ? "CONNECTED" : "NOT CONNECTED"));
+		if(!connected)
+			this.setAdditionalInfo("no sig info");
 	}
 	
 	/**
@@ -134,10 +148,18 @@ public class WifiCtrl extends JPanel implements ActionListener {
 		this.udp_rec_address.setText(udp_addr);
 		this.udp_port.setText(udp_port);
 	}
+	
+	public void setAdditionalInfo(String info) {
+		this.info.setText(info);
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Object s = e.getSource();
+		
+		if(s instanceof JButton) {
+			((JButton) s).setEnabled(false);
+		}
 		
 		if(s == this.refresh_status) {
 			this.setConnected(this.listener.refreshWifiStatus());
@@ -151,8 +173,8 @@ public class WifiCtrl extends JPanel implements ActionListener {
 				String pass = JOptionPane.showInputDialog("Please enter passphrase for '"+ssid+"'").trim();
 				if(pass != null) {
 					if(this.listener.selectAP(ssid, pass)) {
-						this.ssid.setText(ssid);
 						this.setConnected(true);
+						this.listener.refreshWifiStatus();
 					} else {
 						this.setConnected(false);
 					}
@@ -160,7 +182,10 @@ public class WifiCtrl extends JPanel implements ActionListener {
 			}
 			
 		} else if(s == this.udp_port) {
-			String val = JOptionPane.showInputDialog("Provide UDP port number").trim();
+			String val = JOptionPane.showInputDialog("Provide UDP port number");
+			if(val == null)
+				return;
+			val = val.trim();
 			try {
 				int port = Integer.parseInt(val);
 				if(this.listener.changeUdpPort(port))
@@ -168,7 +193,10 @@ public class WifiCtrl extends JPanel implements ActionListener {
 			} catch (Exception ignored) { }
 			
 		} else if(s == this.udp_rec_address) {
-			String val = JOptionPane.showInputDialog("Provide receiver address for UDP packets").trim();
+			String val = JOptionPane.showInputDialog("Provide receiver address for UDP packets");
+			if(val == null)
+				return;
+			val = val.trim();
 			if(val.matches(""
 					+ "\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
 					+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
@@ -179,6 +207,15 @@ public class WifiCtrl extends JPanel implements ActionListener {
 			}
 			
 		}
+		
+		if(s instanceof JButton) {
+			((JButton) s).setEnabled(true);
+		}
+		
+	}
+	
+	public void setWifiCtrlListener(WifiCtrlListener l) {
+		this.listener = l;
 	}
 	
 	public interface WifiCtrlListener {
