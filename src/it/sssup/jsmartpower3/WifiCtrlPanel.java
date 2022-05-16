@@ -165,47 +165,55 @@ public class WifiCtrlPanel extends JPanel implements ActionListener {
 			this.setConnected(this.listener.refreshWifiStatus());
 			
 		} else if(s == this.ssid) {
-			String ssid = (String) JOptionPane.showInputDialog(
-                    this, "Select SSID name", "Edit SSID", JOptionPane.QUESTION_MESSAGE,
-                    null, this.listener.scanAP(), null);
-			
-			if(ssid != null) {
-				String pass = JOptionPane.showInputDialog("Please enter passphrase for '"+ssid+"'").trim();
-				if(pass != null) {
-					if(this.listener.selectAP(ssid, pass)) {
-						this.setConnected(true);
-						this.listener.refreshWifiStatus();
+			String [] aps = this.listener.scanAP();
+			if(aps != null) {
+				String ssid = (String) JOptionPane.showInputDialog(
+	                    this, "Select SSID name", "Edit SSID", JOptionPane.QUESTION_MESSAGE,
+	                    null, aps, null);
+				
+				if(ssid != null) {
+					String pass = JOptionPane.showInputDialog(AppWindow.getIstance(), "Please enter passphrase for '"+ssid+"'",
+							"Enter passphrase", JOptionPane.QUESTION_MESSAGE);
+					if(pass != null) {
+						if(this.listener.selectAP(ssid, pass)) {
+							this.setConnected(true);
+							this.listener.refreshWifiStatus();
+						} else {
+							this.setConnected(false);
+						}
 					} else {
-						this.setConnected(false);
+						this.listener.selectAP(null, null);
 					}
+				} else {
+					this.listener.selectAP(null, null);
 				}
 			}
 			
 		} else if(s == this.udp_port) {
-			String val = JOptionPane.showInputDialog("Provide UDP port number");
-			if(val == null)
-				return;
-			val = val.trim();
-			try {
-				int port = Integer.parseInt(val);
-				if(this.listener.changeUdpPort(port))
-					this.udp_port.setText(val);
-			} catch (Exception ignored) { }
-			
-		} else if(s == this.udp_rec_address) {
-			String val = JOptionPane.showInputDialog("Provide receiver address for UDP packets");
-			if(val == null)
-				return;
-			val = val.trim();
-			if(val.matches(""
-					+ "\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
-					+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
-					+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
-					+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")) {
-				if(this.listener.changeUdpAddr(val))
-					this.udp_rec_address.setText(val);
+			String val = JOptionPane.showInputDialog(AppWindow.getIstance(), "Provide UDP port number",
+					"Enter UDP port", JOptionPane.QUESTION_MESSAGE);
+			if(val != null){
+				val = val.trim();
+				try {
+					int port = Integer.parseInt(val);
+					if(this.listener.changeUdpPort(port))
+						this.udp_port.setText(val);
+				} catch (Exception ignored) { }
 			}
-			
+		} else if(s == this.udp_rec_address) {
+			String val = JOptionPane.showInputDialog(AppWindow.getIstance(), "Provide receiver address for UDP packets",
+					"Enter UDP ip address", JOptionPane.QUESTION_MESSAGE);
+			if(val != null) {
+				val = val.trim();
+				if(val.matches(""
+						+ "\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+						+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+						+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+						+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")) {
+					if(this.listener.changeUdpAddr(val))
+						this.udp_rec_address.setText(val);
+				}
+			}
 		}
 		
 		if(s instanceof JButton) {

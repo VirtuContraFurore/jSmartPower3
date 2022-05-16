@@ -3,7 +3,7 @@ package it.sssup.jsmartpower3;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.SocketException;import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
@@ -17,12 +17,14 @@ public class WifiService implements WifiCtrlListener{
 	private Thread packet_monitor_t;
 	private int udp_port;
 	private String udp_addr;
+	private boolean udp_settings_dummy;
 	
 	public WifiService(SerialService serial) {
 		this.serial = serial;
 		this.packet_monitor = null;
 		this.udp_port = 0;
 		this.udp_addr = "0.0.0.0";
+		this.udp_settings_dummy = true;
 	}
 	
 	public void routePacketsTo(DataLogger logger) {
@@ -108,6 +110,15 @@ public class WifiService implements WifiCtrlListener{
 
 	@Override
 	public boolean selectAP(String ap, String passphrase) {
+		if(ap == null || passphrase == null) {
+			try {
+				this.serial.getOutputStream().write(3); // Send CTRL+C
+			} catch (IOException ignored) { ignored.printStackTrace(); } 
+			try { Thread.sleep(100); } catch (InterruptedException ignored) { }
+			this.serial.exitWifiConfig();
+			return false;
+		}
+		
 		if(!Character.isDigit(ap.charAt(0))) {
 			JOptionPane.showMessageDialog(AppWindow.getIstance(), "Invalid AP name: "+ap);
 			this.serial.exitWifiConfig();
@@ -173,6 +184,9 @@ public class WifiService implements WifiCtrlListener{
 
 	@Override
 	public boolean changeUdpPort(int port) {
+		if(this.udp_settings_dummy)
+			this.refreshWifiStatus();
+		
 		boolean success = this.setUdpParam(this.udp_addr, port);
 		if(success && this.packet_monitor != null)
 			this.packet_monitor.changePort(port);
@@ -181,6 +195,9 @@ public class WifiService implements WifiCtrlListener{
 
 	@Override
 	public boolean changeUdpAddr(String addr) {
+		if(this.udp_settings_dummy)
+			this.refreshWifiStatus();
+		
 		return this.setUdpParam(addr, this.udp_port);
 	}
 
@@ -231,6 +248,7 @@ public class WifiService implements WifiCtrlListener{
 		} catch (IOException ignored) { }
 		
 		this.serial.exitWifiConfig();
+		this.udp_settings_dummy = false;
 		return connected;
 	}
 	
@@ -302,7 +320,7 @@ public class WifiService implements WifiCtrlListener{
 			this.run = true;
 			try {
 				this.socket = new DatagramSocket(port);
-			} catch (SocketException ignored) { }
+			} catch (SocketException ignored) { ignored.printStackTrace(); }
 		    this.buf = new byte[1000];
 		}
 		
@@ -311,25 +329,28 @@ public class WifiService implements WifiCtrlListener{
 		}
 		
 		private void changePort(int port) {
-			synchronized (this.socket) {
+			synchronized (this) {
 				try {
+					this.socket.close();
 					this.socket = new DatagramSocket(port);
-				} catch (SocketException ignored) { }
+				} catch (SocketException ignored) { ignored.printStackTrace(); }
 			}
 		}
 		
 		@Override
 		public void run() {
-			try {
-				while(this.run) {
-					synchronized (this.socket) {
-						DatagramPacket packet = new DatagramPacket(buf, buf.length);
-						socket.setSoTimeout(200);
-			            socket.receive(packet);
-			            this.logger.logLine(new String(packet.getData(), packet.getOffset(), packet.getLength()).trim());
-					}
+		while(this.run) {
+				DatagramPacket packet = new DatagramPacket(buf, buf.length);
+				try { Thread.sleep(5); } catch (InterruptedException ignored) { } /* Ease releasing mutex */
+				synchronized (this) {
+					try {
+						socket.setSoTimeout(500);
+						socket.receive(packet);
+						this.logger.logLine(new String(packet.getData(), packet.getOffset(), packet.getLength()).trim());
+					} catch (Exception ignored) { if(!(ignored instanceof SocketTimeoutException)) ignored.printStackTrace(); }
 				}
-			} catch (Exception ignored) { }
+			}
+			this.socket.close();
 		}
 		
 	}

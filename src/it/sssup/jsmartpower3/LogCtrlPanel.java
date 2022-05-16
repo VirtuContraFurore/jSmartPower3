@@ -88,7 +88,7 @@ public class LogCtrlPanel extends JPanel implements ActionListener{
 		this.log_scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		this.add(log_scroll, c);
 		
-		this.setIncomingDataRate(Float.POSITIVE_INFINITY);
+		this.setIncomingDataRate(-1);
 		
 		/* Wire some logic */
 		this.clear.addActionListener(new ActionListener() {
@@ -116,8 +116,11 @@ public class LogCtrlPanel extends JPanel implements ActionListener{
 	 * Displays data rate
 	 * @param ms measured interval between samples
 	 */
-	public void setIncomingDataRate(float ms) {
-		this.data_rate.setText(String.format("Data rate: every %f ms", ms));
+	public void setIncomingDataRate(int ms) {
+		if(ms < 0)
+			this.data_rate.setText("Data rate: zero");
+		else
+			this.data_rate.setText("Data rate: every "+ms+" ms");
 	}
 	
 	/**
@@ -139,7 +142,7 @@ public class LogCtrlPanel extends JPanel implements ActionListener{
 	 */
 	public void clearLog() {
 		this.log_data.setText("");
-		this.setIncomingDataRate(Float.POSITIVE_INFINITY);
+		this.setIncomingDataRate(-1);
 	}
 	
 	/**

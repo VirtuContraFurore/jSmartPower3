@@ -12,6 +12,7 @@ public class Main {
 		AppWindow.getIstance().getSerial().setSerialCtrlListener(logger.getSerialService());
 		AppWindow.getIstance().getWifi().setWifiCtrlListener(logger.getWifiService());
 		AppWindow.getIstance().getLog().setLogCtrlListener(logger);
+		AppWindow.getIstance().getData().setDataCtrlListener(logger);
 	
 	}
 

@@ -22,11 +22,17 @@ public class SerialService implements SerialCtrlListener {
 	private PacketMonitor packet_monitor;
 	private boolean wifi_setup_mode;
 	
+	/* routes packet to logger on port connection */
+	private boolean deferred_routing;
+	private DataLogger deferred_routing_l;
+	
 	public SerialService() {
 		this.port = null; /* not opened */
 		this.conn_monitor = null;
 		this.wifi_setup_mode = false;
 		this.packet_monitor = null;
+		this.deferred_routing = false;
+		this.deferred_routing_l = null;
 	}
 	
 	/**
@@ -41,11 +47,21 @@ public class SerialService implements SerialCtrlListener {
 	 * @param logger
 	 */
 	public void routePacketsTo(DataLogger logger) {
-		if(this.packet_monitor != null)
+		if(this.packet_monitor != null) {
 			this.packet_monitor.stop();
+			this.packet_monitor = null;
+		}
 		
-		if(logger == null)
+		if(logger == null) {
+			this.deferred_routing = false;
 			return;
+		}
+		
+		this.deferred_routing_l = logger;
+		if(!this.isSerialConnected()) {
+			this.deferred_routing = true;
+			return;
+		}
 		
 		this.packet_monitor = new PacketMonitor(this, logger);
 		new Thread(this.packet_monitor).start();
@@ -91,6 +107,11 @@ public class SerialService implements SerialCtrlListener {
 		this.in = this.port.getInputStream();
 		this.out = this.port.getOutputStream();
 		
+		if(this.deferred_routing) {
+			this.deferred_routing = false;
+			this.routePacketsTo(this.deferred_routing_l);
+		}
+		
 		return true;
 	}
 
@@ -98,6 +119,10 @@ public class SerialService implements SerialCtrlListener {
 	public void serialDisconnect() {
 		if(this.port == null)
 			return;
+		
+		boolean save = this.deferred_routing || this.packet_monitor != null;
+		this.routePacketsTo(null);
+		this.deferred_routing = save;
 		
 		try {
 			this.in.close();
@@ -252,7 +277,6 @@ public class SerialService implements SerialCtrlListener {
 			try {
 				String s = "";
 				while(this.run) {				
-					
 					synchronized (this.service.port) {
 						while(!this.service.wifi_setup_mode && this.service.in.available() > 0) {
 							int c = this.service.in.read();
@@ -263,11 +287,11 @@ public class SerialService implements SerialCtrlListener {
 								s = s + ((char)c);
 							}
 						}
+
 					}
-					
 					Thread.sleep(100);
 				}
-			} catch (Exception ignored) { }
+			} catch (InterruptedException | IOException ignored) { }
 		}
 		
 	}
