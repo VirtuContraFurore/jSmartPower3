@@ -7,3 +7,7 @@ Java GUI for SmartPower3 odroid programmable supply, on github
 ```
 java -jar release/jSmartPower-x.y.jar
 ```
+
+# Acknoledgements
+ * xChart: https://knowm.org/open-source/xchart/
+ * jSerialComm: https://github.com/Fazecast/jSerialComm
