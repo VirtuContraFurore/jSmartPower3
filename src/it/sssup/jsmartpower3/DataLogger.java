@@ -1,13 +1,17 @@
 package it.sssup.jsmartpower3;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import it.sssup.jsmartpower3.DataCtlrPanel.DataCtrlListener;
@@ -16,8 +20,7 @@ import it.sssup.jsmartpower3.LogCtrlPanel.LogCtrlListener;
 public class DataLogger implements DataCtrlListener, LogCtrlListener{
 	
 	/* GUI became slow if has to handle large graphics */
-	private static final int MAX_PLOT_POINTS = 2*1000;
-	private static final int UPDATE_GRAPHS_EVERY_MS = 1000; 
+	private static final int MAX_PLOT_POINTS = 5*1000;
 	private static final String CSV_HEADER = "Time, V0, I0, P0, V1, I1, P1";
 	
 	/* Logged data*/
@@ -35,12 +38,13 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 	private long ptime, gtime;
 	private final int DATA_RATE_AVG = 20;
 	private long rec_times[];
-	private long graph_update_ms = UPDATE_GRAPHS_EVERY_MS; /* Refresh plots every second */
 	private long time_adjust;
 	private File log_file;
 	private boolean isLogging;
 	private String outdir;
 	private BufferedWriter writer;
+	private String pattern;
+	private SimpleDateFormat simpleDateFormat;
 	
 	public DataLogger() {
 		this.time = new ArrayList<Date>();
@@ -57,20 +61,14 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		this.isLogging = false;
 		this.log_file = null;
 		this.outdir = System.getProperty("user.home");
+		this.pattern = "yyyy-MM-dd HH:mm:ss.SSS";
+		this.simpleDateFormat = new SimpleDateFormat(pattern);
 
 		this.serial = new SerialService();
 		this.wifi = new WifiService(this.serial);
 		
 		/* Set default log source */
 		this.logSourceChanged(LogCtrlListener.SOURCE_SERIAL);
-	}
-	
-	/**
-	 * Set how often graph should be updated using incoming data
-	 * @param time_ms default is 500ms
-	 */
-	public void setGraphUpdateInterval(long time_ms) {
-		this.graph_update_ms = time_ms;
 	}
 	
 	/**
@@ -108,7 +106,7 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		
 		// update graph if necessary
 		long time = System.currentTimeMillis();
-		if((time - this.gtime) > this.graph_update_ms) {
+		if((time - this.gtime) > AppWindow.getIstance().getChannels().getRefreshMs()) {
 			updateGraphs(packet);
 			this.gtime = time;
 		}
@@ -117,8 +115,7 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		if(this.isLogging) {
 			synchronized (this) {
 				if(this.writer != null) {
-					String pattern = "yyyy-MM-dd HH:mm:ss.SSS";
-					SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+					
 					String s = simpleDateFormat.format(this.time.get(this.time.size()-1));
 					s += String.format(",%2.3f,%2.3f,%2.3f,%2.3f,%2.3f,%2.3f\n",
 							packet.ch0.volt_mV/1000.0f, packet.ch0.ampere_mA/1000.0f, packet.ch0.watt_mW/1000.0f,
@@ -257,9 +254,55 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		if(this.isLogging)
 			return false;
 		
-		// TODO
+		File f = new File(file_path);
 		
-		return false;
+		if(!f.exists())
+			return false;
+		
+		try {
+			BufferedReader r = new BufferedReader(new FileReader(f));
+
+			String l = r.readLine();
+			
+			if(!l.equals(DataLogger.CSV_HEADER)) {
+				/* wrong header */
+				JOptionPane.showMessageDialog(AppWindow.getIstance(),
+						"Error importing file "+file_path+"\nExpecting header: "+DataLogger.CSV_HEADER+"\nGot: "+l);
+				r.close();
+				return false;
+			}
+			
+			this.time = new ArrayList<Date>();
+			this.ch0_v = new ArrayList<Float>();
+			this.ch0_a = new ArrayList<Float>();
+			this.ch0_w = new ArrayList<Float>();
+			this.ch1_v = new ArrayList<Float>();
+			this.ch1_a = new ArrayList<Float>();
+			this.ch1_w = new ArrayList<Float>();
+			
+			while((l = r.readLine()) != null) {
+				String[] tok = l.split(",");
+				if(tok.length != 7)
+					break;
+				
+				this.time.add(this.simpleDateFormat.parse(tok[0]));
+				this.ch0_v.add(Float.parseFloat(tok[1]));
+				this.ch0_a.add(Float.parseFloat(tok[2]));
+				this.ch0_w.add(Float.parseFloat(tok[3]));
+				this.ch1_v.add(Float.parseFloat(tok[4]));
+				this.ch1_a.add(Float.parseFloat(tok[5]));
+				this.ch1_w.add(Float.parseFloat(tok[6]));
+			}
+			
+			r.close();
+		} catch (IOException | ParseException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		this.updateGraphs(null);
+		
+		return true;
 	}
 	
 	@Override
@@ -267,7 +310,8 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		if(this.isLogging)
 			return false;
 		
-		// TODO
+		long min = (long) Long.MAX_VALUE;
+		long max = (long) Long.MIN_VALUE;
 		
 		return false;
 	}
@@ -283,14 +327,17 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 			
 			@Override
 			public void run() {
-				AppWindow.getIstance().getChannels().getChannel(0).setVolts(packet.ch0.volt_mV/1000.0f);
-				AppWindow.getIstance().getChannels().getChannel(0).setAmps(packet.ch0.ampere_mA/1000.0f);
-				AppWindow.getIstance().getChannels().getChannel(0).setWatts(packet.ch0.watt_mW/1000.0f);
-				AppWindow.getIstance().getChannels().getChannel(0).repaintChart();	
 				
-				AppWindow.getIstance().getChannels().getChannel(1).setVolts(packet.ch1.volt_mV/1000.0f);
-				AppWindow.getIstance().getChannels().getChannel(1).setAmps(packet.ch1.ampere_mA/1000.0f);
-				AppWindow.getIstance().getChannels().getChannel(1).setWatts(packet.ch1.watt_mW/1000.0f);			
+				if(packet != null) {
+					AppWindow.getIstance().getChannels().getChannel(0).setVolts(packet.ch0.volt_mV/1000.0f);
+					AppWindow.getIstance().getChannels().getChannel(0).setAmps(packet.ch0.ampere_mA/1000.0f);
+					AppWindow.getIstance().getChannels().getChannel(0).setWatts(packet.ch0.watt_mW/1000.0f);
+					AppWindow.getIstance().getChannels().getChannel(1).setVolts(packet.ch1.volt_mV/1000.0f);
+					AppWindow.getIstance().getChannels().getChannel(1).setAmps(packet.ch1.ampere_mA/1000.0f);
+					AppWindow.getIstance().getChannels().getChannel(1).setWatts(packet.ch1.watt_mW/1000.0f);
+				}
+				
+				AppWindow.getIstance().getChannels().getChannel(0).repaintChart();				
 				AppWindow.getIstance().getChannels().getChannel(1).repaintChart();
 			}
 			

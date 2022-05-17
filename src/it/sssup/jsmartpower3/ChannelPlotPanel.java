@@ -6,14 +6,18 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -22,26 +26,159 @@ import org.knowm.xchart.XChartPanel;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
+import org.knowm.xchart.style.markers.SeriesMarkers;
 
 @SuppressWarnings("serial")
-public class ChannelPlotPanel extends JPanel {
+public class ChannelPlotPanel extends JPanel implements ActionListener {
 	
 	private ChannelPlot channels[];
+	
+	private JComboBox<String> refresh;
+	private JComboBox<String> time_scale;
+	private JComboBox<String> show_ch;
+	
+	private long refresh_ms;
 	
 	public ChannelPlotPanel(int num_channels) {
 		this.channels = new ChannelPlot[num_channels];
 		this.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
-		c.fill = GridBagConstraints.BOTH;
-		c.weightx = 1.0f;
-		c.weighty = 1.0f;
+		c.fill = GridBagConstraints.NONE;
+		c.weightx = 1.00;
+		c.weighty = 0.01;
+		c.gridx = 0;
 		c.gridy = 0;
+		c.gridwidth = num_channels;
+		
+		JPanel opt = new JPanel();
+		opt.setLayout(new BoxLayout(opt, BoxLayout.X_AXIS));
+		opt.add(new JLabel("Refresh "));
+		this.refresh = new JComboBox<String>();
+		opt.add(refresh);
+		opt.add(new JLabel("  Time scale "));
+		this.time_scale = new JComboBox<String>();
+		opt.add(time_scale);
+		opt.add(new JLabel("  Show "));
+		this.show_ch = new JComboBox<String>();
+		opt.add(show_ch);
+		this.add(opt, c);
 
-		for(int i = 0; i < num_channels; i++) {
-			c.gridx = i;
+		for(int i = 0; i < num_channels; i++)
 			this.channels[i] = new ChannelPlot("Channel "+i);
-			this.add(channels[i], c);
+		this.showCh(num_channels);
+		
+		this.refresh.addItem("1 sec");
+		this.refresh.addItem("5 sec");
+		this.refresh.addItem("10 sec");
+		this.refresh.addItem("1 min");
+		this.refresh.addItem("10 min");
+		this.refresh.setSelectedIndex(1);
+		this.refresh_ms = 5000;
+
+		this.time_scale.addItem("millisec");
+		this.time_scale.addItem("seconds");
+		this.time_scale.addItem("minutes");
+		this.time_scale.addItem("hours");
+		this.time_scale.addItem("days");
+		this.time_scale.setSelectedIndex(1);
+		
+		for(int i = 0; i < num_channels; i++)
+			this.show_ch.addItem("Ch "+i);
+		this.show_ch.addItem("all");
+		this.show_ch.setSelectedIndex(num_channels);
+		
+		this.refresh.addActionListener(this);
+		this.time_scale.addActionListener(this);
+		this.show_ch.addActionListener(this);
+	}
+	
+	private void showCh(int ch) {
+		GridBagConstraints c = new GridBagConstraints();
+		c.fill = GridBagConstraints.BOTH;
+		c.weightx = 1.00;
+		c.weighty = 1.00;
+		c.gridy = 1;
+		c.gridx = 0;
+		
+		for(ChannelPlot p : channels)
+			if(!p.isRemoved()) {
+				this.remove(p);
+				p.setRemoved(true);
+			}
+		
+		if(ch < this.channels.length) {
+			c.gridwidth = this.channels.length;
+			this.add(this.channels[ch], c);
+			this.channels[ch].setRemoved(false);
+			
+		} else {
+			c.gridwidth = 1;
+			for(int i = 0; i < this.channels.length; i++) {
+				c.gridx = i;
+				this.add(channels[i], c);
+				channels[i].setRemoved(false);
+			}
 		}
+		
+		this.revalidate();
+		this.repaint();
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		Object s = e.getSource();
+		
+		if(s == this.refresh) {
+			switch((String) this.refresh.getSelectedItem()){
+				case "1 sec":
+					this.refresh_ms = 1000;
+					break;
+				case "5 sec":
+					this.refresh_ms = 5000;
+					break;
+				case "10 sec":
+					this.refresh_ms = 10000;
+					break;
+				case "1 min":
+					this.refresh_ms = 60000;
+					break;
+				case "10 min":
+					this.refresh_ms = 600000;
+					break;
+				default:
+					this.refresh_ms = 5000;
+			}
+		} else if(s == this.time_scale) {
+			long t;
+			switch((String) this.time_scale.getSelectedItem()){
+				case "millisec":
+					t = 1;
+					break;
+				case "seconds":
+					t = 500; // 2 points per second
+					break;
+				case "minutes":
+					t = 20*1000; // 3 points per minute
+					break;
+				case "hours":
+					t = 6 * 60000; // 10 points per hour
+					break;
+				case "days":
+					t = 3600*500; // 48 points per day
+					break;
+				default:
+					t = 20*1000;
+					
+			}
+			this.channels[0].setTimeStepMs(t);
+			this.channels[1].setTimeStepMs(t);
+		} else if(s == this.show_ch) {
+			this.showCh(this.show_ch.getSelectedIndex());
+		}
+	}
+	
+	public long getRefreshMs() {
+		return this.refresh_ms;
 	}
 	
 	/**
@@ -72,16 +209,22 @@ public class ChannelPlotPanel extends JPanel {
 		private XYChart chart;
 		private XChartPanel<XYChart> ws;
 		
-		private List<Date> t;
-		private List<Float> v;
-		private List<Float> i;
-		private List<Float> p;
+		private List<Date> t, t_;
+		private List<Float> v, v_;
+		private List<Float> i, i_;
+		private List<Float> p, p_;
 		private boolean isHolding;
-		
+		private boolean isRemoved;
+		private boolean forceRedrawWhileHold;
+		private long time_step_ms;
+
 		private static final Font def = new Font(Font.MONOSPACED, Font.PLAIN, 15);
 		
 		private ChannelPlot(String name) {
+			this.isRemoved = true;
 			this.isHolding = false;
+			this.forceRedrawWhileHold = false;
+			this.time_step_ms = 500;
 			this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 			
 			ch_name = new JLabel(name);
@@ -109,6 +252,14 @@ public class ChannelPlotPanel extends JPanel {
 			chart.getStyler().setZoomResetByDoubleClick(true);
 			chart.getStyler().setZoomResetByButton(true);
 			chart.getStyler().setZoomSelectionColor(new Color(0,0 , 192, 128));
+			chart.getStyler().setyAxisTickLabelsFormattingFunction(new Function<Double, String>() {
+				
+				@Override
+				public String apply(Double t) {
+					return String.format("%2.3f", t);
+				}
+				
+			});
 			ws = new XChartPanel<XYChart>(chart);
 			this.add(ws);
 			
@@ -140,6 +291,25 @@ public class ChannelPlotPanel extends JPanel {
 			this.setWatts(0.0f);
 		}
 		
+		public boolean isRemoved() {
+			return isRemoved;
+		}
+
+		public void setRemoved(boolean isRemoved) {
+			this.isRemoved = isRemoved;
+		}
+
+		public void setTimeStepMs(long step) {
+			if(this.time_step_ms != step) {
+				this.time_step_ms = step;
+				timeScaleUpate();
+				if(this.isHolding)
+					this.forceRedrawWhileHold = true;
+				repaintChart();
+				this.forceRedrawWhileHold = false;
+			}
+		}
+		
 		/**
 		 * Only for advanced usage
 		 */
@@ -151,61 +321,79 @@ public class ChannelPlotPanel extends JPanel {
 		 * Update serie's lists
 		 */
 		public void setDataSeries(List<Date> t, List<Float> v, List<Float> i, List<Float> p) {
-			this.t = t.stream().collect(Collectors.toList());
-			this.v = v.stream().collect(Collectors.toList());
-			this.i = i.stream().collect(Collectors.toList());
-			this.p = p.stream().collect(Collectors.toList());
+			if(this.isHolding)
+				return;
+			
+			this.t_ = t.stream().collect(Collectors.toList());
+			this.v_ = v.stream().collect(Collectors.toList());
+			this.i_ = i.stream().collect(Collectors.toList());
+			this.p_ = p.stream().collect(Collectors.toList());
+			
+			this.timeScaleUpate();
+		}
+		
+		private void timeScaleUpate() {
+			if(t_ == null || v_ == null || i_ == null || p_  == null)
+				return;
+			
+			long last = -1000000000;
+			
+			this.t = new ArrayList<Date>();
+			this.v = new ArrayList<Float>();
+			this.i = new ArrayList<Float>();
+			this.p = new ArrayList<Float>();
+			
+			for(int idx = 0; idx < t_.size(); idx++) {
+				Date d = t_.get(idx);
+				long time = d.getTime();
+				if(time - last >= this.time_step_ms) {
+					last = time;
+					this.t.add(d);
+					this.v.add(v_.get(idx));
+					this.i.add(i_.get(idx));
+					this.p.add(p_.get(idx));
+				}
+			}
 		}
 		
 		/**
 		 * Repaint chart with data provided using updateDataSeries(..)
 		 */
 		public void repaintChart() {
-			if(this.isHolding)
+			if(this.isRemoved() || (this.isHolding && !this.forceRedrawWhileHold))
 				return;
 			
 			Map<String, XYSeries> map = this.chart.getSeriesMap();
+
+			@SuppressWarnings("unchecked")
+			final List<Float>[] list = new List[] {this.v, this.i, this.p};
+			final String[] k = new String[] {"V", "I", "P"};
+			final String[] desc = new String[] {"Voltage [V]", "Current [A]", "Power [W]"};
+			final Color[] color = new Color[] {Color.RED, Color.YELLOW, Color.GREEN};
+			final JCheckBox[] enable = new JCheckBox[] {this.plot_v, this.plot_i, this.plot_p};
 			
-			// Remove everything
-			for(String s : new String[] {"V", "I", "P"}) {
-				if(map.containsKey(s))
-					this.chart.removeSeries(s);
-			}
-			
-			// Add one by one
-			if(this.v != null && this.plot_v.isSelected()) 
-				this.chart.addSeries("V", this.t, this.v, null);
-			
-			if(this.i != null && this.plot_i.isSelected()) 
-				this.chart.addSeries("I", this.t, this.i, null);
-			
-			if(this.p != null && this.plot_p.isSelected()) 
-				this.chart.addSeries("P", this.t, this.p, null);
-			
-			// Now set axisgroup
-			map = this.chart.getSeriesMap();
-			int axisgroup = 0;
-			
-			for(String s : new String[] {"V", "I", "P"}) {
-				if(map.containsKey(s)){
-					map.get(s).setYAxisGroup(axisgroup);
-					String title = "";
-					switch (s) {
-					case "V":
-						title = "Voltage [V]";
-						break;
-					case "I":
-						title = "Current [A]";
-						break;
-					case "P":
-						title = "Power [W]";
-						break;
+			for(int i = 0; i < k.length; i++) {
+				if(enable[i].isSelected() && list[i] != null) {
+					if(map.containsKey(k[i])) {
+						if(this.isHolding) { /* Preserve zooming */
+							double[] bounds = ChannelPlot.getXAxisBounds(map.get(k[i]));
+							this.chart.updateXYSeries(k[i], this.t, list[i], null);
+							map.get(k[i]).filterXByValue(bounds[0], bounds[1]);
+						} else {
+							this.chart.updateXYSeries(k[i], this.t, list[i], null);
+						}
+					} else {
+						this.chart.addSeries(k[i], this.t, list[i], null);
+						map.get(k[i]).setYAxisGroup(i);
+						this.chart.setYAxisGroupTitle(i, desc[i]);
+						map.get(k[i]).setMarker(SeriesMarkers.NONE);
+						map.get(k[i]).setLineColor(color[i]);
 					}
-					this.chart.setYAxisGroupTitle(axisgroup, title);
-					axisgroup++;
+				} else if(map.containsKey(k[i])) {
+					this.chart.removeSeries(k[i]);
 				}
 			}
-			
+
 			ws.invalidate();
 			ws.repaint();
 		}
@@ -248,7 +436,35 @@ public class ChannelPlotPanel extends JPanel {
 			}
 		}
 		
-	}
+		/**
+		 * Access min and max of X axis using reflection
+		 * @param series
+		 * @return
+		 */
+		public static double[] getXAxisBounds(XYSeries series) {
+			try {
+				
+				Class<?> c1 = series.getClass().getSuperclass().getSuperclass().getSuperclass();
 
+				Field xMax_f =  c1.getDeclaredField("xMax");
+				xMax_f.setAccessible(true);
+				double xMax = (double) xMax_f.get(series);
+				
+				Field xMin_f =  c1.getDeclaredField("xMin");
+				xMin_f.setAccessible(true);
+				double xMin = (double) xMin_f.get(series);
+				
+				return new double [] {xMin, xMax}; 
+				
+//				String pattern = "yyyy-MM-dd HH:mm:ss.SSS";
+//				SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+//				Date d1 = new Date((long)xMax);
+//				Date d2 = new Date((long)xMin);
+//				System.out.println(simpleDateFormat.format(d1) + " " + simpleDateFormat.format(d2));
+				
+			} catch (Exception ignored) { };
+			return null;
+		}
+	}
 
 }
