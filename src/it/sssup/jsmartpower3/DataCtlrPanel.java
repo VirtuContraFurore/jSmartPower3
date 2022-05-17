@@ -207,8 +207,9 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 				this.setHelperString(HelperStrings.FILE_CLEARED_FAIL);
 			
 		} else if (s == this.fileCrop) {
-			if(this.listener.cropFile())
-				this.setHelperString(HelperStrings.FILE_CROPPED);
+			String f = this.listener.cropFile();
+			if(f != null)
+				this.setHelperString(HelperStrings.FILE_CROPPED + f);
 			else
 				this.setHelperString(HelperStrings.FILE_CROPPED_FAIL);
 			
@@ -235,14 +236,14 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 		public static final String FILE_CREATED = "Created new log file %s"; /* When new file created */
 		public static final String FILE_IMPORTED = "Imported old log file %s"; /* When file imported */
 		public static final String FILE_CLEARED = "The content of %s has been erased. Press start to collect new data."; /* When start logging is pressed */
-		public static final String FILE_CROPPED = "Cropped file %s.";
+		public static final String FILE_CROPPED = "Saved cropped data to ";
 		public static final String LOG_START = "Started logging data to %s, press stop to end."; /* When start logging is pressed */
 		public static final String LOG_STOP = "Stopped logging data to %s, press start to resume."; /* When stop logging is pressed */
 		public static final String DIR_CHANGED = "Output directory updated. To create there a new log file press 'new log file'.";
 		public static final String FILE_CREATED_FAIL = "Creation of file %s failed.";
 		public static final String FILE_IMPORTED_FAIL = "Importing file %s failed.";
 		public static final String FILE_CLEARED_FAIL = "Erasing file %s failed.";
-		public static final String FILE_CROPPED_FAIL = "Error cropping file %s.";
+		public static final String FILE_CROPPED_FAIL = "Error cropping.";
 		public static final String LOG_START_FAIL = "Fail starting logging.";
 		public static final String LOG_STOP_FAIL = "Fail stopping logging."; 
 		public static final String DIR_CHANGED_FAIL = "Requested directory does not exists or is not writable.";
@@ -274,10 +275,10 @@ public class DataCtlrPanel extends JPanel implements ActionListener {
 		public boolean clearFile();
 		
 		/**
-		 * Crop opened file
-		 * @return true if current file cropped, false if error occurred
+		 * Crop selected data
+		 * @return the name of the cropped file, null on failure
 		 */
-		public boolean cropFile();
+		public String cropFile();
 		
 		/**
 		 * Start logging to currently opened file

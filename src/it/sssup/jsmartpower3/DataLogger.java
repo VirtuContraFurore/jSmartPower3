@@ -10,9 +10,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import org.knowm.xchart.XYSeries;
 
 import it.sssup.jsmartpower3.DataCtlrPanel.DataCtrlListener;
 import it.sssup.jsmartpower3.LogCtrlPanel.LogCtrlListener;
@@ -115,7 +118,6 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		if(this.isLogging) {
 			synchronized (this) {
 				if(this.writer != null) {
-					
 					String s = simpleDateFormat.format(this.time.get(this.time.size()-1));
 					s += String.format(",%2.3f,%2.3f,%2.3f,%2.3f,%2.3f,%2.3f\n",
 							packet.ch0.volt_mV/1000.0f, packet.ch0.ampere_mA/1000.0f, packet.ch0.watt_mW/1000.0f,
@@ -306,14 +308,86 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 	}
 	
 	@Override
-	public boolean cropFile() {
-		if(this.isLogging)
-			return false;
+	public String cropFile() {
+		if(this.isLogging) {
+			JOptionPane.showMessageDialog(AppWindow.getIstance(), "You can't crop while logging. Please stop logging first.");
+			return null;
+		}
 		
-		long min = (long) Long.MAX_VALUE;
-		long max = (long) Long.MIN_VALUE;
+		if(AppWindow.getIstance().getChannels().getChannel(0).isRemoved() == AppWindow.getIstance().getChannels().getChannel(1).isRemoved()) {
+			JOptionPane.showMessageDialog(AppWindow.getIstance(), "You can crop only while displaying the channel zoomed in.\nUse show combo box to show only one channel. ");
+			return null;
+		}
 		
-		return false;
+		for(int i = 0; i < 2; i++) {
+			if(AppWindow.getIstance().getChannels().getChannel(i).isRemoved())
+				continue;
+			if(!AppWindow.getIstance().getChannels().getChannel(i).isHolding()) {
+				JOptionPane.showMessageDialog(AppWindow.getIstance(), "Selected channel must be on hold! Click hold button and zoom to your desired section.\nTip: zoom by dragging mouse over graph.");
+				return null;
+			}
+		}
+		
+		long min = (long) Long.MIN_VALUE;
+		long max = (long) Long.MAX_VALUE;
+		
+		for(int i = 0; i < 2; i++) {
+			if(AppWindow.getIstance().getChannels().getChannel(i).isRemoved())
+				continue;
+			
+			Map<String, XYSeries> map = AppWindow.getIstance().getChannels().getChannel(i).getChart().getSeriesMap();
+			if(map.size() < 1) {
+				JOptionPane.showMessageDialog(AppWindow.getIstance(), "Selected channel has no enabled trace. Please enable at least one trace!");
+				return null;
+			}
+			for(XYSeries s : map.values()) {
+				min = (long) s.getXMin();
+				max = (long) s.getXMax();
+				break; // all series has the same bounds
+			}
+		}
+		
+		ArrayList<Date> time = new ArrayList<Date>();
+		ArrayList<Float> ch0_v = new ArrayList<Float>();
+		ArrayList<Float> ch0_a = new ArrayList<Float>();
+		ArrayList<Float> ch0_w = new ArrayList<Float>();
+		ArrayList<Float> ch1_v = new ArrayList<Float>();
+		ArrayList<Float> ch1_a = new ArrayList<Float>();
+		ArrayList<Float> ch1_w = new ArrayList<Float>();
+		
+		for(int i = 0; i < this.time.size(); i++) {
+			if(this.time.get(i).getTime() >= min && this.time.get(i).getTime() <= max) {
+				time.add(this.time.get(i));
+				ch0_v.add(this.ch0_v.get(i));
+				ch0_a.add(this.ch0_a.get(i));
+				ch0_w.add(this.ch0_w.get(i));
+				ch1_v.add(this.ch1_v.get(i));
+				ch1_a.add(this.ch1_a.get(i));
+				ch1_w.add(this.ch1_w.get(i));
+			}
+		}
+		
+		String pattern = "yyyyMMdd'_'HHmmss";
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+		String fdate = simpleDateFormat.format(new Date());
+		File log_file = new File(this.outdir+"/"+fdate+"_crop.csv");
+
+		try {
+			log_file.createNewFile();
+			BufferedWriter writer = new BufferedWriter(new FileWriter(log_file));
+			writer.append(DataLogger.CSV_HEADER+"\n");
+			for(int i = 0; i < time.size(); i++) {
+				String s = this.simpleDateFormat.format(time.get(i));
+				s += String.format(",%2.3f,%2.3f,%2.3f,%2.3f,%2.3f,%2.3f\n",
+						ch0_v.get(i), ch0_a.get(i), ch0_w.get(i),
+						ch1_v.get(i), ch1_a.get(i), ch1_w.get(i));
+				writer.append(s);
+			}
+			writer.flush();
+			writer.close();
+		} catch(IOException e) { e.printStackTrace(); }
+		
+		return log_file.getAbsolutePath();
 	}
 	
 	/**
@@ -341,7 +415,7 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 				AppWindow.getIstance().getChannels().getChannel(1).repaintChart();
 			}
 			
-		});	
+		});
 	}
 	
 	private Date timeConversion(long time_ms) {

@@ -6,7 +6,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -90,6 +89,10 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 		this.refresh.addActionListener(this);
 		this.time_scale.addActionListener(this);
 		this.show_ch.addActionListener(this);
+	}
+
+	public int getChannelCount() {
+		return this.channels.length;
 	}
 	
 	private void showCh(int ch) {
@@ -376,7 +379,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 				if(enable[i].isSelected() && list[i] != null) {
 					if(map.containsKey(k[i])) {
 						if(this.isHolding) { /* Preserve zooming */
-							double[] bounds = ChannelPlot.getXAxisBounds(map.get(k[i]));
+							double[] bounds = new double[] {map.get(k[i]).getXMin(), map.get(k[i]).getXMax()};
 							this.chart.updateXYSeries(k[i], this.t, list[i], null);
 							map.get(k[i]).filterXByValue(bounds[0], bounds[1]);
 						} else {
@@ -428,43 +431,18 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 				repaintChart();
 			} else if(s == this.hold) {
 				this.isHolding = !this.isHolding;
-				
+								
 				if(this.isHolding)
 					this.hold.setText("Toggle hold [ON] ");
 				else
 					this.hold.setText("Toggle hold [OFF]");
 			}
 		}
-		
-		/**
-		 * Access min and max of X axis using reflection
-		 * @param series
-		 * @return
-		 */
-		public static double[] getXAxisBounds(XYSeries series) {
-			try {
-				
-				Class<?> c1 = series.getClass().getSuperclass().getSuperclass().getSuperclass();
 
-				Field xMax_f =  c1.getDeclaredField("xMax");
-				xMax_f.setAccessible(true);
-				double xMax = (double) xMax_f.get(series);
-				
-				Field xMin_f =  c1.getDeclaredField("xMin");
-				xMin_f.setAccessible(true);
-				double xMin = (double) xMin_f.get(series);
-				
-				return new double [] {xMin, xMax}; 
-				
-//				String pattern = "yyyy-MM-dd HH:mm:ss.SSS";
-//				SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
-//				Date d1 = new Date((long)xMax);
-//				Date d2 = new Date((long)xMin);
-//				System.out.println(simpleDateFormat.format(d1) + " " + simpleDateFormat.format(d2));
-				
-			} catch (Exception ignored) { };
-			return null;
+		public boolean isHolding() {
+			return this.isHolding;
 		}
+		
 	}
 
 }
