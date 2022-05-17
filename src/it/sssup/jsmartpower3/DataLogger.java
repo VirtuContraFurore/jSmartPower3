@@ -22,8 +22,6 @@ import it.sssup.jsmartpower3.LogCtrlPanel.LogCtrlListener;
 
 public class DataLogger implements DataCtrlListener, LogCtrlListener{
 	
-	/* GUI became slow if has to handle large graphics */
-	private static final int MAX_PLOT_POINTS = 5*1000;
 	private static final String CSV_HEADER = "Time, V0, I0, P0, V1, I1, P1";
 	
 	/* Logged data*/
@@ -95,17 +93,6 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		this.ch1_v.add(packet.ch1.volt_mV/1000.0f);
 		this.ch1_a.add(packet.ch1.ampere_mA/1000.0f);
 		this.ch1_w.add(packet.ch1.watt_mW/1000.0f);
-		
-		//save memory, reduce plot
-		if(this.time.size() > DataLogger.MAX_PLOT_POINTS) {
-			this.time.remove(0);
-			this.ch0_v.remove(0);
-			this.ch0_a.remove(0);
-			this.ch0_w.remove(0);
-			this.ch1_v.remove(0);
-			this.ch1_a.remove(0);
-			this.ch1_w.remove(0);
-		}
 		
 		// update graph if necessary
 		long time = System.currentTimeMillis();
