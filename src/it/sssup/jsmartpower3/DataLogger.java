@@ -46,6 +46,7 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 	private BufferedWriter writer;
 	private String pattern;
 	private SimpleDateFormat simpleDateFormat;
+	private int flush;
 	
 	public DataLogger() {
 		this.time = new ArrayList<Date>();
@@ -64,6 +65,7 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		this.outdir = System.getProperty("user.home");
 		this.pattern = "yyyy-MM-dd HH:mm:ss.SSS";
 		this.simpleDateFormat = new SimpleDateFormat(pattern);
+		this.flush = 0;
 
 		this.serial = new SerialService();
 		this.wifi = new WifiService(this.serial);
@@ -111,6 +113,10 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 							packet.ch1.volt_mV/1000.0f, packet.ch1.ampere_mA/1000.0f, packet.ch1.watt_mW/1000.0f);
 					try {
 						writer.append(s);
+						if(this.flush++ % 50 == 0) {
+							this.flush = 0;
+							writer.flush();
+						}
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
