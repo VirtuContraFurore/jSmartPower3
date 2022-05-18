@@ -28,7 +28,6 @@ java -jar jSmartPower3/release/jSmartPower-1.0.jar
 ## What it does
 * Real time plot! Select the refresh rate as *lowest* as possible to minize graphical overhead. If the gui slow down when you are logging for many minutes try to select a coarser time scale. Avoid to select millisecond timescale with high update interval (like 5ms) as will display unnecessary details at the cost of wasting resources in rendering. Don't worry, when plotting to file everything will be saved according to received data, even if the plots are coarse.
 * Simplyfied wireless setup! Just click the buttons in the WIFI STATUS panel to modify UDP logging, but make sure to the the serial port connected AND opened, as wireless setup goes through the serial port.
-* 
 
 ## How to crop  from displayed graph
 1. make sure to have only one plot displayed
