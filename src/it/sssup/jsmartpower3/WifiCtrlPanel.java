@@ -190,7 +190,7 @@ public class WifiCtrlPanel extends JPanel implements ActionListener {
 			}
 			
 		} else if(s == this.udp_port) {
-			String val = JOptionPane.showInputDialog(AppWindow.getIstance(), "Provide UDP port number",
+			String val = JOptionPane.showInputDialog(AppWindow.getIstance(), "Provide UDP port number (port > 0 and port < 10000)",
 					"Enter UDP port", JOptionPane.QUESTION_MESSAGE);
 			if(val != null){
 				val = val.trim();

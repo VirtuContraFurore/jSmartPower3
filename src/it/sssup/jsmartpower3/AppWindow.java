@@ -16,7 +16,7 @@ public class AppWindow extends JFrame {
 	
 	private static final String app_name = "jSmartPower3";
 	private static final Dimension min_size = new Dimension(900, 600);
-	private static AppWindow istance;
+	private static AppWindow istance = new AppWindow();
 	
 	private boolean populated;
 	private ChannelPlotPanel channels;
@@ -108,8 +108,6 @@ public class AppWindow extends JFrame {
 	 * @return a singleton
 	 */
 	public static AppWindow getIstance() {
-		if(istance == null)
-			istance = new AppWindow();
 		return istance;
 	}
 	

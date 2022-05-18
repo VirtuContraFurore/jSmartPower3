@@ -7,6 +7,7 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +36,14 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 	private JComboBox<String> refresh;
 	private JComboBox<String> time_scale;
 	private JComboBox<String> show_ch;
-	
+	private JButton clear;
 	private long refresh_ms;
+	private DataLogger logger;
 	
+	public void setLogger(DataLogger logger) {
+		this.logger = logger;
+	}
+
 	public ChannelPlotPanel(int num_channels) {
 		this.channels = new ChannelPlot[num_channels];
 		this.setLayout(new GridBagLayout());
@@ -60,6 +66,8 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 		opt.add(new JLabel("  Show "));
 		this.show_ch = new JComboBox<String>();
 		opt.add(show_ch);
+		this.clear = new JButton("Clear graphs");
+		opt.add(clear);
 		this.add(opt, c);
 
 		for(int i = 0; i < num_channels; i++)
@@ -89,6 +97,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 		this.refresh.addActionListener(this);
 		this.time_scale.addActionListener(this);
 		this.show_ch.addActionListener(this);
+		this.clear.addActionListener(this);
 	}
 
 	public int getChannelCount() {
@@ -177,6 +186,8 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 			this.channels[1].setTimeStepMs(t);
 		} else if(s == this.show_ch) {
 			this.showCh(this.show_ch.getSelectedIndex());
+		} else if(s == this.clear) {
+			this.logger.clearGraphs();
 		}
 	}
 	
@@ -220,6 +231,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 		private boolean isRemoved;
 		private boolean forceRedrawTimescale;
 		private long time_step_ms;
+		private int markers;
 
 		private static final Font def = new Font(Font.MONOSPACED, Font.PLAIN, 15);
 		
@@ -228,6 +240,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 			this.isHolding = false;
 			this.forceRedrawTimescale = false;
 			this.time_step_ms = 500;
+			this.markers = 0;
 			this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 			
 			ch_name = new JLabel(name);
@@ -375,7 +388,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 			final JCheckBox[] enable = new JCheckBox[] {this.plot_v, this.plot_i, this.plot_p};
 			
 			for(int i = 0; i < k.length; i++) {
-				if(enable[i].isSelected() && list[i] != null) {
+				if(enable[i].isSelected() && list[i] != null && list[i].size() > 0) {
 					if(map.containsKey(k[i])) {
 						if(this.forceRedrawTimescale) { /* Preserve zooming */
 							double[] bounds = new double[] {map.get(k[i]).getXMin(), map.get(k[i]).getXMax()};
@@ -427,7 +440,9 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 			Object s = e.getSource();
 			
 			if(s == this.plot_v || s == plot_i || s == plot_p) {
+				this.forceRedrawTimescale = true;
 				repaintChart();
+				this.forceRedrawTimescale = false;
 			} else if(s == this.hold) {
 				this.isHolding = !this.isHolding;
 								
@@ -436,6 +451,26 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 				else
 					this.hold.setText("Toggle hold [OFF]");
 			}
+		}
+		
+		public void addMarker(Date date, Color color, boolean start) {
+			String s = (start ? "START" : "STOP") + this.markers++/2;
+			this.getChart().addSeries(s, Arrays.asList(new Date[] {date, date}), Arrays.asList(new Float[] {0.00f, 1.0f}), null);
+			this.getChart().getSeriesMap().get(s).setLineColor(color);
+			this.repaintChart();
+		}
+		
+		public void removeMarkers() {
+			while(this.markers > 0) {
+				for(String s : this.getChart().getSeriesMap().keySet()) {
+					if(s.startsWith("ST")) {
+						this.getChart().removeSeries(s);
+						this.markers--;
+						break;
+					}
+				}
+			}
+			this.repaintChart();
 		}
 
 		public boolean isHolding() {

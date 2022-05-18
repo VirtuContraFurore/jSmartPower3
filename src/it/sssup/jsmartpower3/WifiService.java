@@ -320,13 +320,13 @@ public class WifiService implements WifiCtrlListener{
 	private class PacketMonitor implements Runnable {
 		
 		private DataLogger logger;
-		private boolean run;
+		private boolean isRunning;
 		private DatagramSocket socket;
 		private byte buf[];
 		
 		private PacketMonitor(int port, DataLogger logger) {
 			this.logger = logger;
-			this.run = true;
+			this.isRunning = true;
 			try {
 				this.socket = new DatagramSocket(port);
 			} catch (SocketException ignored) { ignored.printStackTrace(); }
@@ -334,7 +334,7 @@ public class WifiService implements WifiCtrlListener{
 		}
 		
 		private void stop() {
-			this.run = false;
+			this.isRunning = false;
 		}
 		
 		private void changePort(int port) {
@@ -348,9 +348,8 @@ public class WifiService implements WifiCtrlListener{
 		
 		@Override
 		public void run() {
-		while(this.run) {
+			while(this.isRunning) {
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
-				try { Thread.sleep(5); } catch (InterruptedException ignored) { } /* Ease releasing mutex */
 				synchronized (this) {
 					try {
 						socket.setSoTimeout(500);

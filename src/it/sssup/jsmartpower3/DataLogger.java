@@ -1,8 +1,11 @@
 package it.sssup.jsmartpower3;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -47,6 +50,12 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 	private String pattern;
 	private SimpleDateFormat simpleDateFormat;
 	private int flush;
+
+	private FileDescriptor fd;
+
+	private long last_flush;
+
+	private FileOutputStream outstream;
 	
 	public DataLogger() {
 		this.time = new ArrayList<Date>();
@@ -116,6 +125,10 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 						if(this.flush++ % 50 == 0) {
 							this.flush = 0;
 							writer.flush();
+							if(time - this.last_flush > 60000) {
+								this.last_flush = time;
+								this.fd.sync();
+							}
 						}
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -203,7 +216,9 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		
 		synchronized(this) {
 			try {
-				this.writer = new BufferedWriter(new FileWriter(this.log_file, true));
+				this.outstream = new FileOutputStream(this.log_file, true);
+				this.fd = this.outstream.getFD();
+				this.writer = new BufferedWriter(new FileWriter(fd));
 			} catch (IOException e) {
 				e.printStackTrace();
 				return null;
@@ -211,6 +226,16 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		}
 		
 		this.isLogging = true;
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				AppWindow.getIstance().getChannels().getChannel(0).addMarker(new Date(System.currentTimeMillis()), Color.BLACK, true);
+			}
+			
+		});
+		
 		return this.log_file.getAbsolutePath();
 	}
 
@@ -221,10 +246,21 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 		
 		this.isLogging = false;
 		
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				AppWindow.getIstance().getChannels().getChannel(0).addMarker(new Date(System.currentTimeMillis()), Color.BLACK, false);
+			}
+			
+		});
+		
 		synchronized(this) {
 			try {
 				this.writer.flush();
+				this.fd.sync();
 				this.writer.close();
+				this.outstream.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 				return false;
@@ -402,6 +438,13 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 					AppWindow.getIstance().getChannels().getChannel(1).setVolts(packet.ch1.volt_mV/1000.0f);
 					AppWindow.getIstance().getChannels().getChannel(1).setAmps(packet.ch1.ampere_mA/1000.0f);
 					AppWindow.getIstance().getChannels().getChannel(1).setWatts(packet.ch1.watt_mW/1000.0f);
+				} else {
+					AppWindow.getIstance().getChannels().getChannel(0).setVolts(0);
+					AppWindow.getIstance().getChannels().getChannel(0).setAmps(0);
+					AppWindow.getIstance().getChannels().getChannel(0).setWatts(0);
+					AppWindow.getIstance().getChannels().getChannel(1).setVolts(0);
+					AppWindow.getIstance().getChannels().getChannel(1).setAmps(0);
+					AppWindow.getIstance().getChannels().getChannel(1).setWatts(0);
 				}
 				
 				AppWindow.getIstance().getChannels().getChannel(0).repaintChart();				
@@ -543,6 +586,27 @@ public class DataLogger implements DataCtrlListener, LogCtrlListener{
 
 		}
 		
+	}
+
+	public void clearGraphs() {
+		this.time = new ArrayList<Date>();
+		this.ch0_v = new ArrayList<Float>();
+		this.ch0_a = new ArrayList<Float>();
+		this.ch0_w = new ArrayList<Float>();
+		this.ch1_v = new ArrayList<Float>();
+		this.ch1_a = new ArrayList<Float>();
+		this.ch1_w = new ArrayList<Float>();
+		this.updateGraphs(null);
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				AppWindow.getIstance().getChannels().getChannel(0).removeMarkers();
+				AppWindow.getIstance().getChannels().getChannel(1).removeMarkers();
+			}
+			
+		});
 	}
 	
 }

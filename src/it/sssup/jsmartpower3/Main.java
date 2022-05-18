@@ -14,6 +14,7 @@ public class Main {
 		AppWindow.getIstance().getWifi().setWifiCtrlListener(logger.getWifiService());
 		AppWindow.getIstance().getLog().setLogCtrlListener(logger);
 		AppWindow.getIstance().getData().setDataCtrlListener(logger);
+		AppWindow.getIstance().getChannels().setLogger(logger);
 	
 	}
 
