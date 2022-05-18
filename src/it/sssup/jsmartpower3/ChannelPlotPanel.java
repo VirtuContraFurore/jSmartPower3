@@ -218,7 +218,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 		private List<Float> p, p_;
 		private boolean isHolding;
 		private boolean isRemoved;
-		private boolean forceRedrawWhileHold;
+		private boolean forceRedrawTimescale;
 		private long time_step_ms;
 
 		private static final Font def = new Font(Font.MONOSPACED, Font.PLAIN, 15);
@@ -226,7 +226,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 		private ChannelPlot(String name) {
 			this.isRemoved = true;
 			this.isHolding = false;
-			this.forceRedrawWhileHold = false;
+			this.forceRedrawTimescale = false;
 			this.time_step_ms = 500;
 			this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 			
@@ -306,10 +306,9 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 			if(this.time_step_ms != step) {
 				this.time_step_ms = step;
 				timeScaleUpate();
-				if(this.isHolding)
-					this.forceRedrawWhileHold = true;
+				this.forceRedrawTimescale = true;
 				repaintChart();
-				this.forceRedrawWhileHold = false;
+				this.forceRedrawTimescale = false;
 			}
 		}
 		
@@ -363,7 +362,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 		 * Repaint chart with data provided using updateDataSeries(..)
 		 */
 		public void repaintChart() {
-			if(this.isRemoved() || (this.isHolding && !this.forceRedrawWhileHold))
+			if(this.isRemoved() || (this.isHolding && !this.forceRedrawTimescale))
 				return;
 			
 			Map<String, XYSeries> map = this.chart.getSeriesMap();
@@ -378,7 +377,7 @@ public class ChannelPlotPanel extends JPanel implements ActionListener {
 			for(int i = 0; i < k.length; i++) {
 				if(enable[i].isSelected() && list[i] != null) {
 					if(map.containsKey(k[i])) {
-						if(this.isHolding) { /* Preserve zooming */
+						if(this.forceRedrawTimescale) { /* Preserve zooming */
 							double[] bounds = new double[] {map.get(k[i]).getXMin(), map.get(k[i]).getXMax()};
 							this.chart.updateXYSeries(k[i], this.t, list[i], null);
 							map.get(k[i]).filterXByValue(bounds[0], bounds[1]);
