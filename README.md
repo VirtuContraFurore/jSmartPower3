@@ -21,6 +21,7 @@ The device has a front panel to operate the channels and to setup serial logging
 Before you begin, when you connect the device using USB port, make sure to set the serial's baudrate to maximum (921600) using the front panel as explained in the wiki linked above. The gui only set the baudrate of receiving serial port, while device's baudrate (sender) can be set only from the device itself.
 
 ## Usage
+To download and run just follow this step (recent Java version required!)
 ```
 git clone https://github.com/VirtuContraFurore/jSmartPower3.git
 java -jar jSmartPower3/release/jSmartPower-1.0.jar
@@ -36,6 +37,11 @@ java -jar jSmartPower3/release/jSmartPower-1.0.jar
 4. press crop file button -> data will be saved locally in the output folder to '{timestamp}_crop.csv'
 5. PRO TIP: if you want to save *everything* you see on plot and not just a zoomed portion, you can skip point 3 and save the WHOLE data set! (This is especially usefull if you forgot to enable file capturing and notice only later when data have already been acquired but not saved on file)
 ![Alt text](images/crop.png?raw=true)
+
+## What to do if GUI become unresponsive due to large amount of data to plot
+When gather *a lot* of data, you can do two things:
+1. Refresh the plots every 10 minutes instead that every second, this would save resources
+2. Select the appropriate timescale! If you capture data for hours I believe you probabily don't want to see the details of what happens every millisecond - don't worry, again, everything will be saved even if it not currently displayed, provided you enabled capturing data to file.
 
 # Acknoledgements
  * xChart: https://knowm.org/open-source/xchart/
