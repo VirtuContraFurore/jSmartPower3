@@ -39,9 +39,9 @@ java -jar jSmartPower3/release/jSmartPower-1.0.jar
 ![Alt text](images/crop.png?raw=true)
 
 ## What to do if GUI become unresponsive due to large amount of data to plot
-When gather *a lot* of data, you can do two things:
-1. Refresh the plots every 10 minutes instead that every second, this would save resources
-2. Select the appropriate timescale! If you capture data for hours I believe you probabily don't want to see the details of what happens every millisecond - don't worry, again, everything will be saved even if it not currently displayed, provided you enabled capturing data to file.
+When gathering *a lot* of data, you can do two things:
+1. Refresh plots every 10 minutes rather than every second, this would save resources
+2. Select the appropriate timescale! If you capture data for *hours* I believe you probabily don't want to see fine details of what happens every millisecond - don't worry, again, everything will be saved even if it not currently displayed, provided you enabled capturing data to file.
 
 # Acknoledgements
  * xChart: https://knowm.org/open-source/xchart/
