@@ -171,15 +171,12 @@ public class SerialService implements SerialCtrlListener {
 		
 		synchronized(this.port){
 			try {
-				while(this.in.available() > 0)
-					this.in.read();
+				this.readAllAvailable();
 				
 				this.out.write(3); // Send CTRL+C
 				try { Thread.sleep(100); } catch (InterruptedException ignored) { }
 
-				String s = "";
-				while(this.in.available() > 0)
-					s = s + ((char) in.read());
+				String s = this.readAllAvailable();
 								
 				if(!s.endsWith("Command : "))
 					return false;
@@ -198,15 +195,12 @@ public class SerialService implements SerialCtrlListener {
 				return false;
 			
 			try {
-				while(this.in.available() > 0)
-					this.in.read();
+				this.readAllAvailable();
 				
 				this.out.write(3); // Send CTRL+C
 				try { Thread.sleep(100); } catch (InterruptedException ignored) { }
 				
-				String s = "";
-				while(this.in.available() > 0)
-					s = s + ((char) in.read());
+				String s = this.readAllAvailable();
 				
 				if(!s.trim().contains(">>> WiFi command mode exited <<<")) {
 					JOptionPane.showMessageDialog(AppWindow.getIstance(),
@@ -256,6 +250,13 @@ public class SerialService implements SerialCtrlListener {
 		
 	}
 	
+	private String readAllAvailable() throws IOException {
+		StringBuilder s = new StringBuilder(3000);
+		while(this.in.available() > 0)
+			s.append((char) in.read());
+		return s.toString();
+	}
+	
 	private class PacketMonitor implements Runnable {
 		
 		private SerialService service;
@@ -275,16 +276,16 @@ public class SerialService implements SerialCtrlListener {
 		@Override
 		public void run() {
 			try {
-				String s = "";
+				StringBuffer s = new StringBuffer(300);
 				while(this.run) {				
 					synchronized (this.service.port) {
 						while(!this.service.wifi_setup_mode && this.service.in.available() > 0) {
 							int c = this.service.in.read();
 							if(c == '\n') {
-								this.logger.logLine(s);
-								s = "";
+								this.logger.logLine(s.toString());
+								s = new StringBuffer(300);
 							} else {
-								s = s + ((char)c);
+								s.append((char)c);
 							}
 						}
 
