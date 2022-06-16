@@ -15,7 +15,13 @@ public class Main {
 		AppWindow.getIstance().getLog().setLogCtrlListener(logger);
 		AppWindow.getIstance().getData().setDataCtrlListener(logger);
 		AppWindow.getIstance().getChannels().setLogger(logger);
-	
+		
+		/* Refresh serial port list on startup (needs to run in awt's thread) */
+		java.awt.EventQueue.invokeLater(new Runnable() {
+	        public void run() {
+	    		AppWindow.getIstance().getSerial().forceRefresh();
+	        }
+	    });
 	}
 
 }
